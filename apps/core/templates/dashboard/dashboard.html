@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% load static l10n %}
+{% block title %}Inicio{% endblock %}
+{% block page_css %}<link rel="stylesheet" href="{% static 'css/pages/dashboard.css' %}">{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <span class="section-label">Panel general</span>
+    <h1>Hola, {{ request.user.first_name|default:"usuario" }}</h1>
+    <p>Resumen del inventario a hoy, {{ hoy|date:"d/m/Y" }}.</p>
+  </div>
+  <a href="{% url 'inventory:product_create' %}" class="btn btn-brand">
+    <span class="icon-placeholder"><!-- ICONO: plus AQUÍ --></span> Nuevo producto
+  </a>
+</div>
+
+<!-- KPIs: cada tarjeta usa el gradiente definido por kpi.color -->
+<div class="kpi-grid">
+  {% for kpi in kpis %}
+    <div class="kpi-card kpi-{{ kpi.color }}">
+      <div class="kpi-top">
+        <span class="kpi-icon icon-placeholder"><!-- ICONO: {{ kpi.icon }} AQUÍ --></span>
+        {% if kpi.delta %}<span class="kpi-delta">{{ kpi.delta }}</span>{% endif %}
+      </div>
+      <span class="kpi-value">{{ kpi.value }}</span>
+      <span class="kpi-label">{{ kpi.label }}</span>
+    </div>
+  {% endfor %}
+</div>
+
+{# localize off: evita que la configuración "es" escriba decimales con coma en SVG/CSS #}
+{% localize off %}
+<div class="dashboard-grid">
+
+  <section class="card-surface chart-card" aria-label="Movimientos de la semana">
+    <div class="card-head">
+      <h2 class="form-section-title">Movimientos de la semana</h2>
+      <span class="meta">{{ grafico.total }} en total</span>
+    </div>
+    <div class="area-chart">
+      <svg viewBox="{{ grafico.viewbox }}" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="gArea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" class="stop-area-top"></stop>
+            <stop offset="100%" class="stop-area-bottom"></stop>
+          </linearGradient>
+          <linearGradient id="gLine" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" class="stop-line-1"></stop>
+            <stop offset="50%" class="stop-line-2"></stop>
+            <stop offset="100%" class="stop-line-3"></stop>
+          </linearGradient>
+        </defs>
+        {% for y in grafico.guias %}
+          <line x1="0" x2="{{ grafico.ancho }}" y1="{{ y }}" y2="{{ y }}" class="grid-line" vector-effect="non-scaling-stroke"></line>
+        {% endfor %}
+        <path d="{{ grafico.area }}" fill="url(#gArea)"></path>
+        <path d="{{ grafico.linea }}" class="chart-line" stroke="url(#gLine)" vector-effect="non-scaling-stroke"></path>
+      </svg>
+      <span class="chart-guide" style="left: {{ grafico.maximo.x_pct }}%; top: {{ grafico.maximo.y_pct }}%;"></span>
+      <span class="chart-point" style="left: {{ grafico.maximo.x_pct }}%; top: {{ grafico.maximo.y_pct }}%;"></span>
+      <div class="chart-tooltip" style="left: {{ grafico.maximo.x_pct }}%; top: {{ grafico.maximo.y_pct }}%;">
+        <strong>{{ grafico.maximo.valor }}</strong>movimientos · {{ grafico.maximo.dia }}
+      </div>
+    </div>
+    <div class="chart-xlabels">
+      {% for e in grafico.etiquetas %}<span style="left: {{ e.x_pct }}%;">{{ e.texto }}</span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="card-surface chart-card" aria-label="Productos por categoría">
+    <div class="card-head">
+      <h2 class="form-section-title">Productos por categoría</h2>
+    </div>
+    <div class="donut-wrap">
+      <div class="donut">
+        <svg viewBox="0 0 42 42" aria-hidden="true">
+          <circle class="track" cx="21" cy="21" r="15.915"></circle>
+          {% for s in dona.segmentos %}
+            <circle class="seg seg-{{ s.color }}" cx="21" cy="21" r="15.915" stroke-dasharray="{{ s.dash }}" stroke-dashoffset="{{ s.offset }}"></circle>
+          {% endfor %}
+        </svg>
+        <div class="donut-center"><strong>{{ dona.total }}</strong><span>productos</span></div>
+      </div>
+      <ul class="legend">
+        {% for s in dona.segmentos %}
+          <li><span class="dot dot-{{ s.color }}"></span><span>{{ s.nombre }}</span><span class="val">{{ s.pct }}%</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+
+</div>
+{% endlocalize %}
+
+<div class="dashboard-grid">
+
+  <section class="card-surface chart-card">
+    <div class="card-head">
+      <h2 class="form-section-title">Movimientos recientes</h2>
+      <a href="{% url 'inventory:movement_list' %}" class="meta">Ver todos</a>
+    </div>
+    <div class="table-responsive">
+      <table class="table-app">
+        <thead>
+          <tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th>Cantidad</th><th>Almacén</th></tr>
+        </thead>
+        <tbody>
+          {% for mov in movimientos_recientes %}
+            <tr>
+              <td class="cell-muted">{{ mov.fecha|date:"d/m H:i" }}</td>
+              <td>{{ mov.producto }}</td>
+              <td><span class="badge-type {{ mov.tipo_clase }}">{{ mov.tipo }}</span></td>
+              <td>{{ mov.cantidad }}</td>
+              <td class="cell-muted">{{ mov.almacen }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5"><div class="empty-state">Sin movimientos registrados todavía.</div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card-surface chart-card">
+    <div class="card-head">
+      <h2 class="form-section-title">Alertas de stock bajo</h2>
+      <span class="meta">{{ alertas_stock|length }} productos</span>
+    </div>
+    {% if alertas_stock %}
+      <ul class="low-stock-list">
+        {% for alerta in alertas_stock %}
+          <li>
+            <span class="name">{{ alerta.producto }}</span>
+            <span class="badge-stock low">{{ alerta.cantidad }} u.</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty-state">
+        <div class="icon-placeholder"><!-- ICONO: check AQUÍ --></div>
+        <p>No hay productos con stock bajo.</p>
+      </div>
+    {% endif %}
+  </section>
+
+</div>
+{% endblock %}

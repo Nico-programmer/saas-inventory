@@ -1,0 +1,22 @@
+<!-- ============================================================
+     _topbar.html
+     Barra superior: botón hamburguesa (solo móvil/tablet) +
+     usuario. El hamburguesa abre el offcanvas del sidebar.
+     ============================================================ -->
+<header class="topbar">
+  <button type="button"
+          class="topbar-btn topbar-hamburger"
+          data-bs-toggle="offcanvas"
+          data-bs-target="#sidebarOffcanvas"
+          aria-controls="sidebarOffcanvas"
+          aria-label="Abrir menú">
+    <span class="icon-placeholder"><!-- ICONO: hamburguesa AQUÍ --></span>
+  </button>
+
+  <div></div>
+
+  <div class="topbar-user">
+    <span class="avatar">{{ request.user.first_name|default:"U"|slice:":1"|upper }}</span>
+    <span class="d-none d-sm-inline">{{ request.user.get_full_name|default:request.user.username }}</span>
+  </div>
+</header>

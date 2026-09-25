@@ -1,0 +1,65 @@
+<!-- ============================================================
+     _sidebar.html
+     Sidebar reutilizable. Genera los links a partir de
+     `sidebar_menu` (context_processors.py) — para añadir un
+     link nuevo solo se edita esa lista, no este archivo.
+     ============================================================ -->
+<nav class="sidebar" aria-label="Navegación principal">
+
+  <div class="sidebar-brand">
+    <span class="brand-mark">MN</span>
+    <span class="brand-name">Mi Negocio</span>
+  </div>
+
+  <div class="sidebar-nav">
+    {% for item in sidebar_menu %}
+
+      {% ifchanged item.section %}
+        {% if item.section %}
+          <hr class="sidebar-divider">
+          <div class="sidebar-section-label">{{ item.section }}</div>
+        {% endif %}
+      {% endifchanged %}
+
+      {% if item.children %}
+        <a href="#submenu-{{ forloop.counter }}"
+           class="nav-link-item{% if item.active %} active{% endif %}"
+           data-bs-toggle="collapse"
+           data-sidebar-toggle
+           role="button"
+           aria-expanded="{% if item.expanded %}true{% else %}false{% endif %}"
+           aria-controls="submenu-{{ forloop.counter }}">
+          <span class="nav-icon icon-placeholder"><!-- ICONO: {{ item.icon }} AQUÍ --></span>
+          <span class="nav-label">{{ item.label }}</span>
+          <span class="nav-chevron icon-placeholder"><!-- ICONO: chevron-down AQUÍ --></span>
+        </a>
+        <div class="collapse nav-submenu{% if item.expanded %} show{% endif %}" id="submenu-{{ forloop.counter }}">
+          {% for child in item.children %}
+            <a href="{% url child.url_name %}"
+               class="nav-link-item{% if child.active %} active{% endif %}"
+               {% if child.active %}aria-current="page"{% endif %}>
+              <span class="nav-icon icon-placeholder"><!-- ICONO: {{ child.icon }} AQUÍ --></span>
+              <span class="nav-label">{{ child.label }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <a href="{% url item.url_name %}"
+           class="nav-link-item{% if item.active %} active{% endif %}"
+           {% if item.active %}aria-current="page"{% endif %}>
+          <span class="nav-icon icon-placeholder"><!-- ICONO: {{ item.icon }} AQUÍ --></span>
+          <span class="nav-label">{{ item.label }}</span>
+        </a>
+      {% endif %}
+
+    {% endfor %}
+  </div>
+
+  <div class="sidebar-footer">
+    <a href="{% url 'accounts:logout' %}" class="nav-link-item">
+      <span class="nav-icon icon-placeholder"><!-- ICONO: logout AQUÍ --></span>
+      <span class="nav-label">Cerrar sesión</span>
+    </a>
+  </div>
+
+</nav>

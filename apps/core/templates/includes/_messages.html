@@ -1,0 +1,14 @@
+<!-- ============================================================
+     _messages.html
+     Renderiza los mensajes flash de Django (messages framework).
+     ============================================================ -->
+{% if messages %}
+  <div class="flash-messages-wrap">
+    {% for message in messages %}
+      <div class="flash-message {{ message.tags }}" role="alert">
+        <span class="icon-placeholder"><!-- ICONO: {{ message.tags }} AQUÍ --></span>
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
